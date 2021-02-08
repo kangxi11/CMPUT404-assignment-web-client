@@ -22,7 +22,7 @@ import sys
 import socket
 import re
 # you may use urllib to encode data appropriately
-import urllib.parse
+from urllib.parse import urlparse, urlencode
 
 def help():
     print("httpclient.py [GET/POST] [URL]\n")
@@ -41,19 +41,30 @@ class HTTPClient(object):
         return None
 
     def get_code(self, data):
-        return None
+        return int(self.get_headers(data).split()[1])
 
     def get_headers(self,data):
-        return None
+        return data.split('\r\n\r\n')[0]
 
     def get_body(self, data):
-        return None
+        return data.split('\r\n\r\n')[1]
     
     def sendall(self, data):
         self.socket.sendall(data.encode('utf-8'))
         
     def close(self):
         self.socket.close()
+
+    def parse_url(self, url):
+        parse_result = urlparse(url)
+        host, port, path = parse_result.hostname, parse_result.port, parse_result.path
+
+        if port == None:
+            port = 80
+        if path == '':
+            path = '/'
+
+        return host, port, path
 
     # read everything from the socket
     def recvall(self, sock):
@@ -68,13 +79,41 @@ class HTTPClient(object):
         return buffer.decode('utf-8')
 
     def GET(self, url, args=None):
-        code = 500
-        body = ""
+        # parse url for host, port, and path
+        host, port, path = self.parse_url(url)
+
+        # connect and send payload
+        self.connect(host, port)
+        payload = 'GET {} HTTP/1.1\r\nHost: {}\r\nAccept: */*\r\nConnection: close\r\n\r\n'.format(path,host)
+        self.sendall(payload)
+
+        # read everything from socket
+        data = self.recvall(self.socket)
+        code = self.get_code(data)
+        body = self.get_body(data)
+        print(body)
+
+        self.close()
         return HTTPResponse(code, body)
 
     def POST(self, url, args=None):
-        code = 500
-        body = ""
+        # parse url for host, port, and path
+        host, port, path = self.parse_url(url)
+
+        # connect and send payload
+        self.connect(host, port)
+        args = '' if args == None else urlencode(args)
+        payload = '''POST {} HTTP/1.1\r\nHost: {}\r\nContent-Type: application/x-www-form-urlencoded\r\nAccept: 
+            */*\r\nContent-Length: {}\r\nConnection: close\r\n\r\n'''.format(path, host, len(args)) + args
+        self.sendall(payload)
+
+        # read everything from socket
+        data = self.recvall(self.socket)
+        code = self.get_code(data)
+        body = self.get_body(data)
+        print(body)
+
+        self.close()
         return HTTPResponse(code, body)
 
     def command(self, url, command="GET", args=None):

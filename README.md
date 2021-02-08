@@ -10,12 +10,17 @@ Make a simple web-client like curl or wget
 References
 ==============================
 Python urllib documentation
-https://docs.python.org/3.6/library/urllib.parse.html
+* https://docs.python.org/3.6/library/urllib.parse.html
 
 
 
 Contributors / Licensing
 ========================
+Collaborators:
+* jnrizvi
+* vanmaren
+* fredford
+* khairull
 
 Generally everything is LICENSE'D under the Apache 2 license by Abram Hindle, 
 https://github.com/tywtyw2002, and https://github.com/treedust
